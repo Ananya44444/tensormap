@@ -160,22 +160,30 @@ export default function Training() {
 
   // Validation functions
   const validateEpochs = (value) => {
-    const num = parseInt(value, 10);
     if (!value || value.trim() === "") {
       return "Epochs is required";
     }
-    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) {
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      return "Epochs must be a positive integer";
+    }
+    const num = Number(trimmed);
+    if (num <= 0) {
       return "Epochs must be a positive integer";
     }
     return "";
   };
 
   const validateBatchSize = (value) => {
-    const num = parseInt(value, 10);
     if (!value || value.trim() === "") {
       return "Batch size is required";
     }
-    if (isNaN(num) || num <= 0 || !Number.isInteger(num)) {
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) {
+      return "Batch size must be a positive integer";
+    }
+    const num = Number(trimmed);
+    if (num <= 0) {
       return "Batch size must be a positive integer";
     }
     return "";
@@ -269,7 +277,7 @@ export default function Training() {
         break;
     }
     setValidationErrors((prev) => ({ ...prev, [field]: error }));
-  }, []);
+  }, []); // Empty deps since validation functions are stable within component
 
   // Check if form has any validation errors
   const hasValidationErrors = () => {
@@ -295,13 +303,8 @@ export default function Training() {
 
   const handleFileSelect = useCallback(
     (value) => {
-      // Try both string and number comparisons since the data might be mixed types
-      const selected = fileDetails.find(
-        (item) =>
-          item.file_id === value ||
-          item.file_id === parseInt(value) ||
-          item.file_id.toString() === value,
-      );
+      const normalizedValue = String(value);
+      const selected = fileDetails.find((item) => String(item.file_id) === normalizedValue);
       if (selected && selected.fields && selected.fields.length > 0) {
         const fields = selected.fields.map((item, index) => ({
           label: item,
@@ -314,6 +317,7 @@ export default function Training() {
       }
       setTrainingConfig((prev) => ({ ...prev, file_id: value, target_field: "" }));
       updateValidationErrors("file_id", value);
+      updateValidationErrors("target_field", "");
     },
     [fileDetails, updateValidationErrors],
   );
@@ -364,7 +368,9 @@ export default function Training() {
     trainingConfig.optimizer &&
     trainingConfig.metric &&
     trainingConfig.epochs &&
+    trainingConfig.batch_size &&
     trainingConfig.training_split &&
+    trainingConfig.target_field &&
     !hasValidationErrors();
 
   const handleDownload = () => {
@@ -489,6 +495,7 @@ export default function Training() {
                   onValueChange={(v) => {
                     setTrainingConfig((prev) => ({ ...prev, problem_type_id: v }));
                     updateValidationErrors("problem_type_id", v);
+                    setConfigSaved(false);
                   }}
                 >
                   <SelectTrigger
@@ -527,6 +534,7 @@ export default function Training() {
                       const value = e.target.value;
                       setTrainingConfig((prev) => ({ ...prev, target_field: value }));
                       updateValidationErrors("target_field", value);
+                      setConfigSaved(false);
                     }}
                     list={fieldsList.length > 0 ? "target-fields" : undefined}
                   />
@@ -556,6 +564,7 @@ export default function Training() {
                   onValueChange={(v) => {
                     setTrainingConfig((prev) => ({ ...prev, optimizer: v }));
                     updateValidationErrors("optimizer", v);
+                    setConfigSaved(false);
                   }}
                 >
                   <SelectTrigger className={validationErrors.optimizer ? "border-red-500" : ""}>
@@ -580,6 +589,7 @@ export default function Training() {
                   onValueChange={(v) => {
                     setTrainingConfig((prev) => ({ ...prev, metric: v }));
                     updateValidationErrors("metric", v);
+                    setConfigSaved(false);
                   }}
                 >
                   <SelectTrigger className={validationErrors.metric ? "border-red-500" : ""}>
@@ -610,6 +620,7 @@ export default function Training() {
                     const value = e.target.value;
                     setTrainingConfig((prev) => ({ ...prev, epochs: value }));
                     updateValidationErrors("epochs", value);
+                    setConfigSaved(false);
                   }}
                 />
                 {validationErrors.epochs && (
@@ -629,6 +640,7 @@ export default function Training() {
                     const value = e.target.value;
                     setTrainingConfig((prev) => ({ ...prev, batch_size: value }));
                     updateValidationErrors("batch_size", value);
+                    setConfigSaved(false);
                   }}
                 />
                 {validationErrors.batch_size && (
@@ -650,6 +662,7 @@ export default function Training() {
                     const value = e.target.value;
                     setTrainingConfig((prev) => ({ ...prev, training_split: value }));
                     updateValidationErrors("training_split", value);
+                    setConfigSaved(false);
                   }}
                 />
                 {validationErrors.training_split && (

@@ -10,6 +10,17 @@ import ReactFlow, {
   BackgroundVariant,
 } from "reactflow";
 import { useRecoilState } from "recoil";
+import { Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import * as strings from "../../constants/Strings";
 import logger from "../../shared/logger";
 import FeedbackDialog from "../shared/FeedbackDialog";
@@ -47,6 +58,8 @@ function Canvas() {
     detail: "",
   });
   const defaultViewport = { x: 10, y: 15, zoom: 0.5 };
+
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
   // Auto-load the project's first saved model on mount
   useEffect(() => {
@@ -120,6 +133,13 @@ function Canvas() {
     },
     [setNodes],
   );
+
+  const handleConfirmClear = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+    setSelectedNodeId(null);
+    setIsClearDialogOpen(false);
+  }, [setEdges, setNodes]);
 
   const closeFeedback = () => {
     setFeedbackDialog((prev) => ({ ...prev, open: false }));
@@ -222,30 +242,64 @@ function Canvas() {
       <div className="flex gap-4">
         <ReactFlowProvider>
           <Sidebar />
-          <div className="h-[62vh] flex-1" ref={reactFlowWrapper}>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onInit={setReactFlowInstance}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onNodeClick={onNodeClick}
-              onPaneClick={onPaneClick}
-              nodeTypes={nodeTypes}
-              defaultViewport={defaultViewport}
-            >
-              <Controls />
-              <Background
-                id="1"
-                gap={10}
-                color="#e5e5e5"
-                style={{ backgroundColor: "#fafafa" }}
-                variant={BackgroundVariant.Dots}
-              />
-            </ReactFlow>
+          <div className="flex flex-1 flex-col gap-2">
+            <div className="flex items-center justify-end">
+              <Dialog open={isClearDialogOpen} onOpenChange={setIsClearDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    disabled={nodes.length === 0}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Clear All
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Clear canvas?</DialogTitle>
+                    <DialogDescription>
+                      This will remove {nodes.length} {nodes.length === 1 ? "node" : "nodes"} and
+                      all connections from the canvas. This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsClearDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onClick={handleConfirmClear}>
+                      Clear All
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="h-[62vh] flex-1" ref={reactFlowWrapper}>
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onInit={setReactFlowInstance}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                onNodeClick={onNodeClick}
+                onPaneClick={onPaneClick}
+                nodeTypes={nodeTypes}
+                defaultViewport={defaultViewport}
+              >
+                <Controls />
+                <Background
+                  id="1"
+                  gap={10}
+                  color="#e5e5e5"
+                  style={{ backgroundColor: "#fafafa" }}
+                  variant={BackgroundVariant.Dots}
+                />
+              </ReactFlow>
+            </div>
           </div>
           <div className="w-64 shrink-0">
             <NodePropertiesPanel
